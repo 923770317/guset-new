@@ -4,7 +4,8 @@ from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
-
+from models import *
+from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
 
 # Create your views here.
 def index(request):
@@ -32,5 +33,34 @@ def login_action(request):
 @login_required
 def event_manage(request):
     # username = request.COOKIES.get('user','')   # 取出cookie
-    username = request.session.get('user','')  # 取出 session
-    return render(request,'event_manage.html',{'user':username})
+    # username = request.session.get('user','')  # 取出 session
+    # return render(request,'event_manage.html',{'user':username})
+    event_list  = None
+    serch_name = request.GET.get('name','')
+    if serch_name:
+        event_list = Event.objects.filter(name__icontains=serch_name)
+    else:
+        event_list = Event.objects.all()
+    username = request.session.get('user', '')
+    return render(request,'event_manage.html',{'user':username,'events':event_list})
+
+@login_required
+def guest_manage(request):
+    username = request.session.get('user', '')
+    page = request.GET.get('page')
+    guest_list = None
+    search_phone = request.GET.get('phone','')
+    if search_phone:
+        guest_list = Guest.objects.filter(phone__contains=search_phone)
+    else:
+        guest_list =  Guest.objects.all()
+    paginator = Paginator(guest_list,2)
+    try:
+        content = paginator.page(page)
+    except PageNotAnInteger:
+        content = paginator.page(1) # 如果page 不是整数，则去第一页
+    except EmptyPage:
+        content = paginator.page(paginator.num_pages)  #如果page 不在范围内，则取最后一页
+
+    return render(request, 'guest_manage.html', {'user': username, 'guests': content})
+
