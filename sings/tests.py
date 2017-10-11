@@ -16,4 +16,4 @@ class ModelTest(TestCase):
 
     def test_event_model(self):
         result = Event.objects.get(name='DELL Open Meeting')
-        self.assertEqual(result.address,'changzhou1')
+        self.assertEqual(result.address,'changzhou1q')
