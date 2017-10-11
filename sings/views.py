@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.http import HttpResponse,HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from models import *
@@ -63,4 +63,26 @@ def guest_manage(request):
         content = paginator.page(paginator.num_pages)  #如果page 不在范围内，则取最后一页
 
     return render(request, 'guest_manage.html', {'user': username, 'guests': content})
+
+@login_required
+def sign_index(request,eid):
+    event = get_object_or_404(Event,id=eid)
+    return  render(request,'sign_index.html',{'event':event})
+
+@login_required
+def sign_index_action(request,eid):
+    event = get_object_or_404(Event, id=eid)
+    phone = request.POST.get('phone','')
+    print phone
+    result = Guest.objects.filter(phone=phone)
+    if not result:
+        return render(request,'sign_index.html',{'event':event,'hint':'phone error.'})
+    result = Guest.objects.get(phone=phone,event_id=eid)
+    if not result:
+        return render(request,'sign_index.html',{'event':event,'hint':'event id or ponoe error'})
+    if result.isSign:
+        return render(request, 'sign_index.html', {'event': event, 'hint': 'user has sign in'})
+    else:
+        Guest.objects.filter(phone=phone,event_id=eid).update(isSign='1')
+        return render(request, 'sign_index.html', {'event': event, 'hint': 'sign in success!','guest':result})
 
